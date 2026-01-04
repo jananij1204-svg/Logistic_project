@@ -1,68 +1,58 @@
 import streamlit as st
+import numpy as np
 import pickle
-import pandas as pd
-import os
 
-st.set_page_config(page_title="ML Prediction App", layout="centered")
+MODEL_PATH = "logistic (1).pkl"
 
-st.title("📊 Machine Learning Prediction App")
-
-# ---------------- Load Model ---------------- #
 @st.cache_resource
 def load_model():
-    model_path = "model.pkl"   # rename your file to model.pkl
-
-    if not os.path.exists(model_path):
-        st.error("❌ Model file 'model.pkl' not found. Please place it in the app folder.")
-        st.stop()
-
-    with open(model_path, "rb") as f:
+    with open(MODEL_PATH, "rb") as f:
         return pickle.load(f)
 
 model = load_model()
 
-st.success("✅ Model loaded successfully!")
+st.title("Heart Disease Prediction App")
 
-# ---------------- CSV Upload ---------------- #
-uploaded_file = st.file_uploader(
-    "📥 Upload CSV file for prediction",
-    type=["csv"]
-)
+# Get feature names from model (do NOT display them)
+feature_names = list(model.feature_names_in_)
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-    st.write("### 🧾 Uploaded Data")
-    st.dataframe(df)
+# Custom display names for user-friendly UI
+display_names = {
+    "male": "Gender (0 = Female, 1 = Male)",
+    "age": "Age",
+    "currentSmoker": "Current Smoker (1 = Yes, 0 = No)",
+    "cigsPerDay": "Cigarettes Per Day",
+    "BPMeds": "Using BP Medication (1 = Yes, 0 = No)",
+    "prevalentStroke": "History of Stroke (1 = Yes, 0 = No)",
+    "prevalentHyp": "Hypertension (1 = Yes, 0 = No)",
+    "diabetes": "Diabetes (1 = Yes, 0 = No)",
+    "totChol": "Total Cholesterol",
+    "sysBP": "Systolic BP",
+    "diaBP": "Diastolic BP",
+    "BMI": "BMI (Body Mass Index)",
+    "heartRate": "Heart Rate",
+    "glucose": "Glucose Level"
+}
 
-    # Validate number of features
+st.subheader("Enter Health Details")
+
+inputs = []
+
+# build inputs using friendly names
+for name in feature_names:
+    label = display_names.get(name, name)
+    val = st.number_input(label, value=0.0)
+    inputs.append(val)
+
+features = np.array(inputs).reshape(1, -1)
+
+if st.button("Predict"):
     try:
-        required_features = model.n_features_in_
-    except:
-        required_features = df.shape[1]  # fallback for custom models
+        pred = model.predict(features)[0]
+        prob = model.predict_proba(features)[0][1]
 
-    if df.shape[1] != required_features:
-        st.error(f"""
-        ❌ Incorrect number of columns.
+        st.success(f"Prediction: {pred}")
+        st.info(f"Risk Probability: {prob:.4f}")
 
-        Your model expects **{required_features} features**,  
-        but CSV contains **{df.shape[1]} columns**.
-        """)
-    else:
-        if st.button("🔮 Predict"):
-            predictions = model.predict(df)
-
-            result = df.copy()
-            result["Prediction"] = predictions
-
-            st.success("✅ Prediction completed!")
-            st.write("### 📄 Prediction Results")
-            st.dataframe(result)
-
-            # Download result
-            csv = result.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                label="⬇ Download Prediction CSV",
-                data=csv,
-                file_name="predictions.csv",
-                mime="text/csv"
-            )
+    except Exception as e:
+        st.error(f"Prediction Error: {e}")
