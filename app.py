@@ -7,7 +7,7 @@ st.set_page_config(page_title="Heart Disease Prediction", layout="centered")
 st.title("❤️ Heart Disease Prediction App")
 
 # ---- MODEL PATH ----
-MODEL_PATH = "/mnt/data/logistic (3).pkl"
+MODEL_PATH = "logistic (3).pkl"
 
 # ---- LOAD MODEL ----
 @st.cache_resource
