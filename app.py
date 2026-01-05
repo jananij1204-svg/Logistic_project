@@ -1,58 +1,39 @@
 import streamlit as st
-import numpy as np
 import pickle
+import os
 
-MODEL_PATH = "logistic (1).pkl"
+st.title("Movie Interest Prediction App 🎬")
 
-@st.cache_resource
+# Path inside the ChatGPT environment
+LOCAL_MODEL_PATH = "/mnt/data/logistic (3).pkl"
+
 def load_model():
-    with open(MODEL_PATH, "rb") as f:
-        return pickle.load(f)
+    if os.path.exists(LOCAL_MODEL_PATH):
+        with open(LOCAL_MODEL_PATH, "rb") as f:
+            model = pickle.load(f)
+        return model
+    else:
+        st.error("Model file not found! Please upload logistic (3).pkl")
+        return None
 
 model = load_model()
 
-st.title("Heart Disease Prediction App")
-
-# Get feature names from model (do NOT display them)
-feature_names = list(model.feature_names_in_)
-
-# Custom display names for user-friendly UI
-display_names = {
-    "male": "Gender (0 = Female, 1 = Male)",
-    "age": "Age",
-    "currentSmoker": "Current Smoker (1 = Yes, 0 = No)",
-    "cigsPerDay": "Cigarettes Per Day",
-    "BPMeds": "Using BP Medication (1 = Yes, 0 = No)",
-    "prevalentStroke": "History of Stroke (1 = Yes, 0 = No)",
-    "prevalentHyp": "Hypertension (1 = Yes, 0 = No)",
-    "diabetes": "Diabetes (1 = Yes, 0 = No)",
-    "totChol": "Total Cholesterol",
-    "sysBP": "Systolic BP",
-    "diaBP": "Diastolic BP",
-    "BMI": "BMI (Body Mass Index)",
-    "heartRate": "Heart Rate",
-    "glucose": "Glucose Level"
-}
-
-st.subheader("Enter Health Details")
-
-inputs = []
-
-# build inputs using friendly names
-for name in feature_names:
-    label = display_names.get(name, name)
-    val = st.number_input(label, value=0.0)
-    inputs.append(val)
-
-features = np.array(inputs).reshape(1, -1)
+# User inputs
+age = st.number_input("Enter age", min_value=1, max_value=120, value=25)
+gender = st.selectbox("Gender", ["Male", "Female"])
+genre = st.selectbox("Favourite Genre", ["Action", "Comedy", "Drama", "Horror", "Romance"])
 
 if st.button("Predict"):
-    try:
-        pred = model.predict(features)[0]
-        prob = model.predict_proba(features)[0][1]
+    if model is not None:
+        # Simple encoding example (modify according to your training)
+        gender_map = {"Male": 0, "Female": 1}
+        genre_map = {"Action": 1, "Comedy": 2, "Drama": 3, "Horror": 4, "Romance": 5}
 
-        st.success(f"Prediction: {pred}")
-        st.info(f"Risk Probability: {prob:.4f}")
+        data = [[age, gender_map[gender], genre_map[genre]]]
 
-    except Exception as e:
-        st.error(f"Prediction Error: {e}")
+        prediction = model.predict(data)
+
+        if prediction[0] == 1:
+            st.success("✅ This person is interested in the movie!")
+        else:
+            st.warning("❌ This person is NOT interested in the movie.")
