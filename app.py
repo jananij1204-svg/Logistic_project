@@ -6,7 +6,7 @@ import os
 st.set_page_config(page_title="Heart Disease Prediction", layout="centered")
 st.title("❤️ Heart Disease Prediction (Framingham Dataset)")
 
-MODEL_PATH = "logistic (1).pkl"   # Must be in same folder as app.py
+MODEL_PATH = "logistic (4).pkl"   # Must be in same folder as app.py
 
 # Load model
 @st.cache_resource
