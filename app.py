@@ -1,39 +1,69 @@
 import streamlit as st
 import pickle
 import os
+import numpy as np
 
-st.title("Movie Interest Prediction App 🎬")
+st.set_page_config(page_title="Heart Disease Prediction", layout="centered")
+st.title("❤️ Heart Disease Prediction App")
 
-# Path inside the ChatGPT environment
-LOCAL_MODEL_PATH = "/mnt/data/logistic (3).pkl"
+# ---- MODEL PATH ----
+MODEL_PATH = "/mnt/data/logistic (3).pkl"
 
+# ---- LOAD MODEL ----
+@st.cache_resource
 def load_model():
-    if os.path.exists(LOCAL_MODEL_PATH):
-        with open(LOCAL_MODEL_PATH, "rb") as f:
-            model = pickle.load(f)
-        return model
+    if os.path.exists(MODEL_PATH):
+        with open(MODEL_PATH, "rb") as f:
+            return pickle.load(f)
     else:
-        st.error("Model file not found! Please upload logistic (3).pkl")
+        st.error("❌ Model file not found. Please upload logistic (3).pkl.")
         return None
 
 model = load_model()
 
-# User inputs
-age = st.number_input("Enter age", min_value=1, max_value=120, value=25)
-gender = st.selectbox("Gender", ["Male", "Female"])
-genre = st.selectbox("Favourite Genre", ["Action", "Comedy", "Drama", "Horror", "Romance"])
 
-if st.button("Predict"):
-    if model is not None:
-        # Simple encoding example (modify according to your training)
-        gender_map = {"Male": 0, "Female": 1}
-        genre_map = {"Action": 1, "Comedy": 2, "Drama": 3, "Horror": 4, "Romance": 5}
+# ---- USER INPUT FORM ----
+st.header("🧍 Patient Information")
 
-        data = [[age, gender_map[gender], genre_map[genre]]]
+col1, col2 = st.columns(2)
 
-        prediction = model.predict(data)
+with col1:
+    age = st.number_input("Age", 1, 120, 45)
+    sex = st.selectbox("Sex", ["Male", "Female"])
+    cp = st.selectbox("Chest Pain Type (CP)", [0, 1, 2, 3])
+    trestbps = st.number_input("Resting Blood Pressure", 80, 200, 120)
+    chol = st.number_input("Cholesterol", 100, 600, 200)
 
-        if prediction[0] == 1:
-            st.success("✅ This person is interested in the movie!")
+with col2:
+    fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [0, 1])
+    restecg = st.selectbox("Resting ECG Results", [0, 1, 2])
+    thalach = st.number_input("Max Heart Rate Achieved", 60, 220, 140)
+    exang = st.selectbox("Exercise-Induced Angina", [0, 1])
+    oldpeak = st.number_input("ST Depression (oldpeak)", 0.0, 10.0, 1.0)
+
+# Your model likely uses these 11 standard features
+input_data = np.array([[age,
+                        0 if sex == "Male" else 1,
+                        cp,
+                        trestbps,
+                        chol,
+                        fbs,
+                        restecg,
+                        thalach,
+                        exang,
+                        oldpeak
+                       ]])
+
+# ---- PREDICT ----
+st.write("")
+
+if st.button("🔍 Predict"):
+    if model is None:
+        st.error("Model not loaded.")
+    else:
+        prediction = model.predict(input_data)[0]
+
+        if prediction == 1:
+            st.error("⚠️ High Chance of Heart Disease")
         else:
-            st.warning("❌ This person is NOT interested in the movie.")
+            st.success("✅ No Significant Heart Disease Detected")
